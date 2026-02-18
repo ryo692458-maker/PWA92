@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f1f5f9">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>競輪AI KAI-X (Ver.7.1 Spec-Analysis)</title>
+<style>
+/* KAI-X Ultimate Design System */
+:root{--bg:#f8fafc;--card:#ffffff;--text:#1e293b;--muted:#64748b;--prim:#2563eb;--prim-dark:#1d4ed8;--navy:#1e293b;--navy-hover:#0f172a;--pink:#fce7f3;--pink-text:#be185d;--orange-bg:#ffedd5;--orange-text:#c2410c;--yellow-bg:#fef3c7;--yellow-text:#b45309;--green-bg:#f0fdf4;--green-text:#15803d;--purple-bg:#f3e8ff;--purple-text:#7e22ce;--err:#ef4444;--line:#e2e8f0;--danger-grad:linear-gradient(90deg, #4ade80 0%, #facc15 50%, #ef4444 100%)}
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-size:14px;padding-bottom:100px;-webkit-font-smoothing:antialiased}
+.container{max-width:640px;margin:0 auto;padding:12px}
+h1{font-size:1.1rem;margin:0 0 16px;color:#0f172a;font-weight:800;display:flex;align-items:center;justify-content:space-between}
+.badge-ver{background:#7e22ce;color:#fff;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-left:8px;box-shadow:0 2px 4px rgba(126,34,206,0.2)}
+.btn-refresh{background:none;border:none;cursor:pointer;font-size:1.2rem;padding:4px;transition:transform 0.5s ease}
+.btn-refresh.spinning{transform: rotate(360deg);}
+
+.card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);border:1px solid var(--line)}
+.card h2{font-size:0.9rem;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;color:#334155;font-weight:700}
+.card h3{font-size:0.95rem;margin:0 0 12px;color:#1e293b;font-weight:700}
+
+/* Meta Data & Badges */
+.meta-row{display:flex;align-items:baseline;margin-bottom:6px;font-size:13px}
+.meta-label{width:80px;color:var(--text);font-weight:700;flex-shrink:0}
+.meta-val{flex-grow:1;color:#334155}
+.tag-orange{background:var(--orange-bg);color:var(--orange-text);font-weight:700;padding:2px 8px;border-radius:4px;flex-grow:0;width:fit-content}
+.tag-type{background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px}
+.status-badge{display:inline-block;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;background:#e2e8f0;color:#64748b;margin-bottom:12px}
+.status-badge.ok{background:#dbeafe;color:#1d4ed8}
+
+/* Data Table */
+.data-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;table-layout:fixed}
+.data-table th{background:#f1f5f9;color:#64748b;font-weight:600;padding:6px 2px;text-align:center;border:1px solid var(--line)}
+.data-table td{padding:4px 2px;border:1px solid var(--line);text-align:center;color:#334155;white-space:nowrap;overflow:hidden;vertical-align:middle}
+.val-idx{color:#d97706;font-weight:800}
+.stat-sub{font-size:9px;color:#64748b;line-height:1;margin-top:2px}
+.stat-kimari{font-size:9px;color:#0f172a;margin-top:2px;opacity:0.8;letter-spacing:-0.5px}
+
+/* Learning & Buttons */
+.learn-sec{margin-top:20px;border-top:2px solid var(--line);padding-top:16px}
+.learn-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.learn-title{font-weight:800;font-size:0.95rem;color:#1e293b}
+.data-count{background:#e0f2fe;color:#0284c7;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
+.save-info-box{background:var(--green-bg);border:1px solid #bbf7d0;border-radius:6px;padding:10px;margin-bottom:12px}
+.save-row{display:flex;margin-bottom:4px;font-size:12px}
+.save-label{width:80px;color:var(--green-text);font-weight:700}
+.save-val{color:#1e293b;font-weight:500}
+.btn-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+.btn-navy{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer;flex:1}
+.btn-outline{background:#fff;border:1px solid #cbd5e1;color:#475569;border-radius:6px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer}
+.btn-pink{background:var(--pink);color:var(--pink-text);border:none;border-radius:6px;padding:6px 12px;font-weight:700;font-size:11px;cursor:pointer}
+
+/* Inputs & Forms */
+textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12px;resize:vertical;background:#f8fafc}
+textarea:focus{outline:none;border-color:var(--prim);background:#fff}
+button.pred-btn{flex:1;padding:12px;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;opacity:0.6;transform:scale(0.98);transition:all 0.2s ease}
+button.pred-btn.active-mode{opacity:1;transform:scale(1.02);box-shadow:0 4px 6px rgba(0,0,0,0.15);filter:brightness(1.1)}
+button.primary{background:var(--prim);color:#fff}
+button.acc{background:#f59e0b;color:#fff}
+button.manshu{background:#be123c;color:#fff;width:100%;margin-bottom:12px;padding:10px;border:none;border-radius:6px;font-weight:800;cursor:pointer}
+button.small{padding:2px 8px;font-size:11px;height:24px;border:1px solid #cbd5e1;background:#fff;border-radius:4px;cursor:pointer}
+button:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mono{font-family:monospace}
+input[type="number"]{width:50px;border:1px solid var(--line);border-radius:4px;padding:4px;text-align:center}
+
+/* Prediction Table & Strategy Visuals */
+.prediction-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.prediction-table th{background:#f1f5f9;padding:6px;text-align:center;border-bottom:1px solid var(--line);font-size:11px}
+.prediction-table td{padding:0 4px;border-bottom:1px solid var(--line);text-align:center;height:40px;vertical-align:middle}
+.win-row { background: #ffffff; }
+.row-gold { background: #fef9c3 !important; }
+.match-win { color: #dc2626 !important; font-weight: 900 !important; font-size:1.05em; border-bottom: 2px solid #dc2626; }
+.tag-est{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:#fef08a;color:#854d0e;border:1px solid #eab308;font-weight:800;margin-left:4px}
+
+/* New Strategy Badges */
+.strat-badge { display:inline-block; font-size:9px; padding:1px 4px; border-radius:3px; margin-right:2px; font-weight:800; line-height:1.2; }
+.badge-gap { background:#1e40af; color:#fff; }
+.badge-trend { background:#059669; color:#fff; }
+.badge-danger { background:#ef4444; color:#fff; }
+.badge-warn { background:#f59e0b; color:#fff; }
+
+.judge-badge{display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 8px;border-radius:4px;font-size:10px;font-weight:700;background:#e2e8f0;color:#64748b;min-width:36px}
+.judge-badge.fire{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
+.judge-badge.ok{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.gold-stat-box { background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:8px;border-radius:6px;margin-bottom:10px;font-size:11px;font-weight:bold;display:none; }
+
+/* Manshu Meter */
+.meter-container {position:relative;height:24px;background:#e2e8f0;border-radius:12px;margin:10px 0;overflow:hidden;}
+.meter-bar {height:100%;background:var(--danger-grad);width:0%;transition:width 1s cubic-bezier(0.4, 0, 0.2, 1);}
+.meter-label {position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+.manshu-result-box {background:#fff1f2;border:1px solid #fda4af;padding:10px;border-radius:8px;margin-top:10px;display:none;}
+.manshu-score {font-size:2em;font-weight:900;color:#be123c;text-align:center;line-height:1;}
+.manshu-text {font-size:12px;color:#881337;margin-top:4px;text-align:center;font-weight:700;}
+.manshu-detail {font-size:11px;color:#9f1239;margin-top:8px;border-top:1px dashed #fecdd3;padding-top:6px;line-height:1.4;}
+
+/* Toast */
+#toast{visibility:hidden;min-width:250px;background-color:#333;color:#fff;text-align:center;border-radius:8px;padding:12px;position:fixed;z-index:9999;left:50%;bottom:30px;transform:translateX(-50%);font-size:13px;font-weight:600;opacity:0;transition:opacity 0.5s,bottom 0.5s}
+#toast.show{visibility:visible;opacity:1;bottom:50px}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>
+    <div>競輪AI KAI-X <span class="badge-ver">Ver.7.1</span></div>
+  </h1>
+  <div class="card">
+    <h2>① netkeirin (AI指数/結果) <button id="parse1" class="small">クリア</button></h2>
+    <textarea id="sec1" placeholder="ここに①(netkeirin または AI指数)をペースト"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>② 楽天Ｋドリームス (並び/詳細) <button id="parse2" class="small">クリア</button></h2>
+    <textarea id="sec2" placeholder="ここに②(楽天Kドリ)をペースト"></textarea>
+  </div>
+
+  <div class="card">
+    <h3>③ 統合データ解析</h3>
+    <div id="statusBadge" class="status-badge">データ待ち</div>
+    <div id="errMsg" style="color:var(--err);font-size:11px;display:none;font-weight:bold;margin-bottom:8px;"></div>
+
+    <div id="previewArea">
+      <div class="meta-row"><div class="meta-label">日付/場所</div><div class="meta-val tag-orange" id="dispDateVenue">—</div></div>
+      <div class="meta-row"><div class="meta-label">バンク</div><div class="meta-val tag-orange" id="dispBank">—</div></div>
+      <div class="meta-row"><div class="meta-label">戦型</div><div class="meta-val"><span id="dispType" class="tag-type">—</span></div></div>
+      <div class="meta-row"><div class="meta-label">並び</div><div class="meta-val mono" id="dispLine">—</div></div>
+      <div class="meta-row"><div class="meta-label">着順</div><div class="meta-val" id="dispResult" style="font-weight:bold;letter-spacing:1px">—</div></div>
+      <div class="meta-row"><div class="meta-label">オッズ例</div><div class="meta-val" id="dispOdds" style="font-size:11px;color:#64748b">—</div></div>
+
+      <table class="data-table" id="pTable">
+        <colgroup>
+          <col style="width: 6%">   <col style="width: 32%">  <col style="width: 9%">   <col style="width: 11%">  <col style="width: 10%">  <col style="width: 8%">   <col style="width: 10%">  <col style="width: 14%">  </colgroup>
+        <thead><tr><th>車</th><th>選手(決まり手)</th><th>指数</th><th>勝率</th><th>S(回)</th><th>H</th><th>B(回)</th><th>T</th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="learn-sec">
+        <div class="learn-header">
+          <div class="learn-title">AI学習システム (同一開催地マッチング)</div>
+          <div class="data-count">学習データ数:<span id="learnCount">0</span></div>
+        </div>
+        
+        <div id="saveInfoBox" class="save-info-box">
+          <div class="save-row"><div class="save-label">保存日時</div><div class="save-val" id="lsTime">—</div></div>
+          <div class="save-row"><div class="save-label">日付/場所</div><div class="save-val" id="lsVenue">—</div></div>
+        </div>
+        <div class="btn-row">
+          <button id="btnSave" class="btn-navy" disabled>このレースを学習保存</button>
+          <button id="btnExport" class="btn-outline">データ出力</button>
+        </div>
+        <div class="row" style="margin-bottom:8px;background:#f0fdf4;padding:8px;border-radius:6px;border:1px dashed #86efac;">
+          <label style="font-size:11px;font-weight:700;color:#166534;">JSON読込(学習):</label>
+          <input type="file" id="fileImp" accept=".json" style="font-size:11px;">
+        </div>
+        <div class="row">
+           <select id="selDel" style="font-size:12px;padding:4px;border:1px solid #ccc;border-radius:4px;max-width:140px;"></select>
+           <button id="btnDelOne" class="btn-pink">削除</button>
+           <button id="btnDelAll" class="btn-pink">全削除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>④ ハイブリッド万車券予報 (Manshu-SP)</h3>
+    <button id="btnManshu" class="manshu">荒れ予報を解析 (Theory × History)</button>
+    <div id="manshuResult" class="manshu-result-box">
+        <div class="manshu-score">危険度 <span id="msScore">0</span>%</div>
+        <div class="meter-container"><div id="msBar" class="meter-bar"></div><div id="msLabel" class="meter-label">SAFE</div></div>
+        <div id="msText" class="manshu-text"></div>
+        <div id="msDetail" class="manshu-detail"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>⑤ 鬼の予想生成 (Adaptive-GAP Logic)</h3>
+    
+    <button id="btnAnalyze" style="width:100%;margin-bottom:8px;padding:10px;border:none;border-radius:6px;background:#0d9488;color:#fff;font-weight:bold;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+       同一開催地(バンク)を探して「黄色」の精度を分析
+    </button>
+    
+    <div id="goldAccInfo" class="gold-stat-box">
+      (ボタンを押すと同一開催地の分析を開始します)
+    </div>
+
+    <div class="row" style="margin-bottom:12px;justify-content:space-between;background:#f1f5f9;padding:8px;border-radius:6px">
+      <div class="row"><label class="chk-label" style="font-size:12px;font-weight:500;cursor:pointer">点数 <input type="number" id="numPicks" value="500"></label></div>
+      <button id="btnHeaderRefresh" style="border:1px solid #cbd5e1;background:#fff;border-radius:4px;cursor:pointer;font-size:11px;padding:4px 8px;font-weight:bold;color:#1e293b;" title="学習データを再計算">
+        🔄 データ更新
+      </button>
+      <div class="row">
+        <label class="chk-label" style="font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" id="ckDev" checked> 展開</label>
+        <label class="chk-label" style="font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" id="ckBank" checked> バンク</label>
+        <label class="chk-label" style="font-size:12px;font-weight:500;cursor:pointer"><input type="checkbox" id="ckEst" checked> オッズ</label>
+      </div>
+    </div>
+    <div class="row" style="gap:10px">
+      <button id="btnKelly" class="pred-btn primary" disabled><div>回収率重視 (GAP)</div><div style="font-size:10px;opacity:0.8;font-weight:400">期待値 > 1.0 + 穴狙い</div></button>
+      <button id="btnHit" class="pred-btn acc" disabled><div>的中率重視</div><div style="font-size:10px;opacity:0.8;font-weight:400">堅実なライン決着狙い</div></button>
+    </div>
+    <div id="predOut"></div>
+  </div>
+</div>
+<div id="toast">処理が完了しました</div>
+<script>
+// --- Service Worker設定 ---
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+// --- 定数・辞書データ ---
+const VENUES = "函館|青森|いわき平|弥彦|前橋|取手|宇都宮|大宮|西武園|京王閣|立川|松戸|千葉|川崎|平塚|小田原|伊東|静岡|名古屋|岐阜|大垣|豊橋|富山|松阪|四日市|福井|奈良|向日町|和歌山|岸和田|玉野|広島|防府|高松|小松島|高知|松山|小倉|久留米|武雄|佐世保|別府|熊本".split('|');
+const BANK_DATA_DEF = {'函館':[51.3,400],'青森':[58.9,400],'いわき平':[62.7,400],'弥彦':[63.1,400],'前橋':[46.7,335],'取手':[54.8,400],'宇都宮':[63.3,500],'大宮':[66.7,500],'西武園':[47.6,400],'京王閣':[51.5,400],'立川':[58.0,400],'松戸':[38.2,333],'千葉':[0,250],'川崎':[58.0,400],'平塚':[54.2,400],'小田原':[36.1,333],'伊東':[46.6,333],'静岡':[56.4,400],'名古屋':[58.8,400],'岐阜':[59.3,400],'大垣':[56.0,400],'豊橋':[60.3,400],'富山':[43.0,333],'松阪':[61.9,400],'四日市':[62.4,400],'福井':[52.8,400],'奈良':[38.0,333],'向日町':[47.3,400],'和歌山':[59.9,400],'岸和田':[56.7,400],'玉野':[47.9,400],'広島':[57.9,400],'防府':[42.5,333],'高松':[54.4,400],'小松島':[55.5,400],'高知':[52.0,500],'松山':[58.6,400],'小倉':[56.9,400],'久留米':[50.7,400],'武雄':[64.4,400],'佐世保':[40.2,400],'別府':[59.9,400],'熊本':[69.5,500]};
+
+// --- ロジック全8パターンの定義 ---
+const LOGIC_PATTERNS = [
+  [true, true, true], [true, true, false], [true, false, true], [true, false, false],
+  [false, true, true], [false, true, false], [false, false, true], [false, false, false]
+];
+
+// --- グローバル変数 ---
+let data1 = null, data2 = null, unified = null;
+let bankTrendCache = null; // ★戦略4,5,7 学習データのキャッシュ
+
+// --- ユーティリティ ---
+function showToast(m) { const x=document.getElementById("toast");x.textContent=m;x.className="show";setTimeout(()=>{x.className=x.className.replace("show","")},3000); }
+function normDate(t) { let m=t.match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/); if(m)return{y:m[1],m:m[2].padStart(2,'0'),d:m[3].padStart(2,'0'),str:`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`}; m=t.match(/(\d{1,2})[\/\-月](\d{1,2})日?/); if(m)return{y:null,m:m[1].padStart(2,'0'),d:m[2].padStart(2,'0'),str:`????-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`}; return null; }
+function getVenue(t) { 
+  const h = t.substring(0, 1000); for(let v of VENUES){ if(h.includes(v + '競輪')) return v; }
+  let firstMatch = null; let firstIdx = 99999;
+  for(let v of VENUES){ let re = new RegExp(`${v}.{0,20}\\d{1,2}R`); let m = re.exec(h); if(m && m.index < firstIdx) { firstIdx = m.index; firstMatch = v; } }
+  if(firstMatch) return firstMatch;
+  let simpleMatch = null; let simpleIdx = 99999;
+  for(let v of VENUES){ let idx = h.indexOf(v); if(idx !== -1 && idx < simpleIdx) { simpleIdx = idx; simpleMatch = v; } }
+  return simpleMatch; 
+}
+
+// --- IndexedDB & Trend Cache System ---
+const DB_NAME = 'KeirinKaiX_DB'; const DB_VERSION = 2; const STORE = 'learn'; 
+let db;
+
+// ★戦略7: 詳細スペック傾向の事前計算 (Feature Importance)
+async function refreshBankTrends() {
+  if (!db) return;
+  const btn = document.getElementById('btnHeaderRefresh');
+  if(btn) btn.classList.add('spinning');
+  
+  const tx = db.transaction(STORE, 'readonly');
+  const store = tx.objectStore(STORE);
+  const allRaces = await new Promise(r => { const req = store.getAll(); req.onsuccess = () => r(req.result); });
+
+  const stats = {};
+  allRaces.forEach(race => {
+      const v = race.venue;
+      if (!stats[v]) {
+          stats[v] = { 
+              count: 0, 
+              fav1Win: 0, 
+              highScoreWin: 0, // 指数上位の勝利数(Top3)
+              highBWin: 0,     // B回数上位の勝利数
+              highSWin: 0,     // S回数上位の勝利数
+              sumWinnerB: 0,
+              sumWinnerS: 0,
+              sumWinnerScore: 0
+          };
+      }
+      
+      if (race.result && race.result.length >= 1) {
+          stats[v].count++;
+          const winnerCar = race.result[0];
+          
+          // 勝った選手のデータを取得
+          const wRow = race.rows.find(r => r.car === winnerCar);
+          
+          // レース内の最大値（相対評価用）
+          const maxB = Math.max(...race.rows.map(r=>r.B||0));
+          const maxS = Math.max(...race.rows.map(r=>r.S||0));
+          
+          if (wRow) {
+             stats[v].sumWinnerB += (wRow.B || 0);
+             stats[v].sumWinnerS += (wRow.S || 0);
+             stats[v].sumWinnerScore += (wRow.score || 0);
+
+             // 「高い数値を持っていたか」の判定
+             if (wRow.B >= maxB * 0.8 && wRow.B > 2) stats[v].highBWin++;
+             if (wRow.S >= maxS * 0.8 && wRow.S > 1) stats[v].highSWin++;
+             
+             // ★Top3判定: 指数上位3名に勝者が入っていたか
+             const sortedByScore = race.rows.slice().sort((a,b) => (b.score||0) - (a.score||0));
+             const top3Cars = sortedByScore.slice(0, 3).map(r => r.car);
+             if (top3Cars.includes(winnerCar)) {
+                 stats[v].highScoreWin++; 
+             }
+          }
+          
+          // 1番人気(AI指数1位)信頼度
+          let aiTop = null; let topSc = -1;
+          race.rows.forEach(r => { if(r.score > topSc){ topSc=r.score; aiTop=r.car; } });
+          if(aiTop === winnerCar) stats[v].fav1Win++;
+      }
+  });
+
+  bankTrendCache = {};
+  Object.keys(stats).forEach(v => {
+      const s = stats[v];
+      if (s.count > 0) {
+          bankTrendCache[v] = {
+              sample: s.count,
+              favTrust: s.fav1Win / s.count,       // AI1位の信頼度
+              top3Rate: s.highScoreWin / s.count,  // 上位3名の勝率
+              highBRate: s.highBWin / s.count,     // B持ちの勝率
+              highSRate: s.highSWin / s.count,     // S持ちの勝率
+              avgWinnerB: s.sumWinnerB / s.count,
+              avgWinnerS: s.sumWinnerS / s.count
+          };
+      }
+  });
+  console.log("Trend Cache (v7.1):", bankTrendCache);
+  if(btn) { btn.classList.remove('spinning'); }
+  showToast("学習データの解析完了");
+}
+// --- DB初期化 & データ更新 ---
+function initDB() {
+  const req = indexedDB.open(DB_NAME, DB_VERSION);
+  req.onupgradeneeded = e => { 
+    let db = e.target.result;
+    let store;
+    if(!db.objectStoreNames.contains(STORE)) {
+      store = db.createObjectStore(STORE, {keyPath:'id', autoIncrement:true});
+    } else {
+      store = e.target.transaction.objectStore(STORE);
+    }
+    if(!store.indexNames.contains('venue')) {
+      store.createIndex('venue', 'venue', { unique: false });
+    }
+  };
+  req.onsuccess = async e => { 
+      db = e.target.result; 
+      // ★起動時にキャッシュを計算
+      await refreshBankTrends();
+      updateLearnUI(); 
+  }; 
+  req.onerror = e => { console.error("DB Err:"+e.target.error); };
+}
+
+// --- レース特徴抽出 & 類似検索 ---
+function getRaceFeatures(race) {
+    const venue = race.venue;
+    const bankData = BANK_DATA_DEF[venue] || [50, 400]; 
+    let lineCount = 0;
+    if(race.lines) {
+        race.lines.forEach(l => { if(l.includes('-')) lineCount++; });
+    }
+    if(lineCount === 0) lineCount = 3; 
+
+    let topScore = 0;
+    if(race.rows) {
+        race.rows.forEach(r => { if(r.score > topScore) topScore = r.score; });
+    }
+    return { venue, bankLen: bankData[1], lineCount, topScore };
+}
+
+function getOddsVariant(race) {
+    if (!race.odds || race.odds.length === 0) return 2; 
+    let sorted = [...race.odds].sort((a,b)=>a.o - b.o);
+    let fav = sorted[0].o;
+    if (fav < 2.0) return 1; 
+    if (fav < 4.0) return 2; 
+    return 3; 
+}
+
+function hasDarkHorse(race) {
+    if(!race.rows) return false;
+    // 相対評価での穴判定
+    const maxScore = Math.max(...race.rows.map(r=>r.score||0));
+    return race.rows.some(r => r.win < 0.05 && r.score >= maxScore - 5);
+}
+
+function findSimilarRaces(targetRace, allRaces) {
+    const targetFeat = getRaceFeatures(targetRace);
+    let similar = allRaces.filter(r => {
+        if(!r.result || r.result.length < 3) return false; 
+        const rFeat = getRaceFeatures(r);
+        let isVenueMatch = (rFeat.venue === targetFeat.venue);
+        let isLineSim = (rFeat.lineCount === targetFeat.lineCount);
+        let scoreDiff = Math.abs(rFeat.topScore - targetFeat.topScore);
+        let isScoreSim = (scoreDiff <= 20); 
+        return isVenueMatch && isLineSim && isScoreSim;
+    });
+    if(similar.length < 3) {
+        similar = allRaces.filter(r => {
+            if(!r.result || r.result.length < 3) return false;
+            const rFeat = getRaceFeatures(r);
+            return (rFeat.venue === targetFeat.venue) && (rFeat.lineCount === targetFeat.lineCount);
+        });
+    }
+    return similar;
+}
+
+// --- ★核心: 適応型スコア計算ロジック Ver.7.1 (Strategy 7 Implemented) ---
+function calcRaceScores(raceData, cfg) {
+    const { useDev, useBank, useEst } = cfg;
+    const { rows, lines, odds, venue } = raceData;
+    
+    // 1. バンク定数の初期化
+    const bankInfo = BANK_DATA_DEF[venue];
+    let bankConst = { sengo: 1.0, makuri: 1.0, sashi: 1.0 }; 
+    let trendTags = []; 
+    let paramBonus = { B: 1.0, S: 1.0, Solid: 1.0, Chaos: 1.0 }; // 新パラメータ
+
+    // 2. ★戦略1 & 4 & 7: 学習データに基づく動的重み付け (Adaptive Weighting)
+    if(useBank && bankInfo) {
+        const [straight, len] = bankInfo;
+        // (A) 静的データの反映
+        if (len === 333 || straight < 40) { bankConst.sengo = 1.3; bankConst.sashi = 0.8; } 
+        else if (len === 500 || straight > 58) { bankConst.sengo = 0.8; bankConst.sashi = 1.25; }
+
+        // (B) ★動的トレンドの反映 (Spec-Analysis)
+        if (bankTrendCache && bankTrendCache[venue]) {
+            const trend = bankTrendCache[venue];
+            
+            // (1) B回数の重要度判定 (High B Rate)
+            if (trend.highBRate > 0.4) {
+                paramBonus.B = 1.25; 
+                trendTags.push({ type: 'trend', label: 'B重視' });
+            }
+            // (2) S回数の重要度判定 (High S Rate)
+            if (trend.highSRate > 0.3) {
+                paramBonus.S = 1.15;
+                trendTags.push({ type: 'trend', label: 'S重視' });
+            }
+
+            // (3) ★Top3判定: 堅実か波乱か
+            if (trend.top3Rate > 0.8) {
+                trendTags.push({ type: 'trend', label: '上位堅実' });
+                paramBonus.Solid = 1.15; // 上位3名を強化
+            } else if (trend.top3Rate < 0.5) {
+                trendTags.push({ type: 'warn', label: '紐荒れ' });
+                paramBonus.Chaos = 1.15; // 下位を強化
+            }
+        }
+    }
+
+    // 3. ライン情報の構築と★戦略3:「千切れ」検知
+    let carLineInfo = {}; 
+    let dangerLines = new Set(); 
+
+    lines.forEach((lineStr, grpIdx) => { 
+        let members = lineStr.split('-').map(Number); 
+        members.forEach((c, idx) => { carLineInfo[c] = { group: grpIdx, pos: idx, total: members.length }; }); 
+        
+        if(members.length >= 2) {
+            const leader = rows.find(r=>r.car === members[0]);
+            const follower = rows.find(r=>r.car === members[1]);
+            if(leader && follower) {
+                if(leader.B > 10 && (leader.score - follower.score > 10)) {
+                    dangerLines.add(grpIdx);
+                }
+            }
+        }
+    });
+
+    // 4. 全組み合わせの計算
+    let cars = rows.map(r=>r.car); let combs = [];
+    const perm = (arr, m = []) => { if (m.length === 3) { combs.push(m); return; } for (let i = 0; i < arr.length; i++) { let curr = arr.slice(); let next = curr.splice(i, 1); perm(curr, m.concat(next)); }};
+    perm(cars);
+
+    // ★相対評価用の基準値取得
+    const raceMaxB = Math.max(...rows.map(r=>r.B||0));
+    const raceMaxS = Math.max(...rows.map(r=>r.S||0));
+    // Top3判定用リスト作成
+    const sortedByScore = rows.slice().sort((a,b) => (b.score||0) - (a.score||0));
+    const currentTop3 = sortedByScore.slice(0, 3).map(r => r.car);
+
+    let totalScore = 0;
+    let scored = combs.map(c => {
+        let [c1, c2, c3] = c;
+        let r1 = rows.find(x=>x.car===c1), r2 = rows.find(x=>x.car===c2), r3 = rows.find(x=>x.car===c3);
+        let l1 = carLineInfo[c1]||{group:-1,pos:-1}, l2 = carLineInfo[c2]||{group:-1,pos:-1}, l3 = carLineInfo[c3]||{group:-1,pos:-1};
+        
+        // ★戦略7: 個別選手のスペックブースト
+        let booster1 = 1.0;
+        
+        // B回数補正 (レース内で上位クラスかつ数値を持っている場合)
+        if (r1.B > 0 && r1.B >= raceMaxB * 0.8) booster1 *= paramBonus.B;
+        // S回数補正
+        if (r1.S > 0 && r1.S >= raceMaxS * 0.8) booster1 *= paramBonus.S;
+        
+        // 堅実/波乱補正
+        if (paramBonus.Solid > 1.0 && currentTop3.includes(r1.car)) booster1 *= paramBonus.Solid;
+        if (paramBonus.Chaos > 1.0 && !currentTop3.includes(r1.car)) booster1 *= paramBonus.Chaos;
+
+        // 基礎能力計算
+        let p1 = Math.max(r1.win, 0.01) * booster1;
+        let p2 = Math.max(r2.win, 0.01); 
+        let p3 = Math.max(r3.win, 0.01);
+        
+        if(r1.score) p1 *= (1 + (r1.score - 80) / 100); 
+        if(r2.score) p2 *= (1 + (r2.score - 80) / 100);
+        if(r3.score) p3 *= (1 + (r3.score - 80) / 100);
+        
+        let rawPower = p1 * (p2 * 0.8) * (p3 * 0.6);
+        let tenkaiBonus = 1.0;
+        let isDanger = false;
+
+        if(useDev) {
+            if (l1.group!==-1 && l1.group===l2.group) { 
+                if (dangerLines.has(l1.group)) {
+                    tenkaiBonus *= 0.4; // 千切れリスク
+                    isDanger = true;
+                } else {
+                    if (l1.pos > l2.pos) { tenkaiBonus *= 1.6; } else { tenkaiBonus *= 1.8; if(bankConst.sengo > 1.0) tenkaiBonus *= 1.2; } 
+                    if (l2.group === l3.group) tenkaiBonus *= 1.3; 
+                }
+            } else { 
+                tenkaiBonus *= 0.5; 
+                if (r1.B > 0.3) tenkaiBonus *= 1.2; 
+                if (dangerLines.size > 0 && !dangerLines.has(l1.group)) { tenkaiBonus *= 1.5; }
+            }
+        }
+        
+        // ★戦略5: S/B回数補正 (旧来の簡易ロジックも保険として残す)
+        let styleBonus = 1.0; 
+        if (useBank) { 
+            if (r1.B > 0.4) styleBonus *= bankConst.sengo; 
+            else styleBonus *= bankConst.sashi; 
+        }
+        
+        let score = rawPower * tenkaiBonus * styleBonus;
+        totalScore += score;
+        return { comb: c.join('-'), rawScore: score, prob: 0, isDanger: isDanger, trendTags: trendTags };
+    });
+
+    // 5. オッズとGAPの計算
+    const oddMap = {}; odds.forEach(o => oddMap[o.c] = o.o);
+    const maxRealOdds = odds.length > 0 ? Math.max(...odds.map(o => o.o)) : 1.0;
+
+    return scored.map(item => {
+        item.prob = item.rawScore / totalScore;
+        let o = oddMap[item.comb];
+        if (!o && useEst) { if(item.prob > 0) o = (1 / item.prob) * 0.75; else o = 0; if (o < maxRealOdds) o = maxRealOdds; if(o > 500) o = 500; }
+        item.oddsRef = o || 0;
+        item.ev = item.prob * item.oddsRef;
+        let marketProb = item.oddsRef > 0 ? (1.0 / item.oddsRef) : 0;
+        item.gap = item.prob - marketProb; 
+        return item;
+    });
+}
+// --- GoldSet (黄色ハイライト) 抽出 ---
+function getGoldSet(raceData) {
+    let goldSet = new Set();
+    LOGIC_PATTERNS.forEach(pattern => {
+        const config = { useDev: pattern[0], useBank: pattern[1], useEst: pattern[2] };
+        const results = calcRaceScores(raceData, config);
+        results.forEach(res => {
+            // ★戦略2: GAP > 0.1 (AIがオッズより10%以上高く評価) も追加条件に
+            if (res.ev >= 1.0 || res.gap > 0.1) { 
+                goldSet.add(res.comb);
+            }
+        });
+    });
+    return goldSet;
+}
+
+// --- 類似レース分析 (Ver.7.1: Adaptive Precision) ---
+async function analyzeSimilarStats() {
+    const el = document.getElementById('goldAccInfo');
+    if(!db || !unified) { 
+        el.style.display='block'; 
+        el.textContent='エラー: 分析するには①②のデータを入力して解析を完了させてください'; 
+        return; 
+    }
+    
+    el.innerHTML = '<span style="color:#c2410c">データを検索＆Adaptive分析中...</span>';
+    el.style.display = 'block';
+
+    await new Promise(r => setTimeout(r, 50));
+    let tx = db.transaction(STORE, 'readonly');
+    let store = tx.objectStore(STORE);
+    let allRaces = await new Promise(r => { let req = store.getAll(); req.onsuccess = () => r(req.result); });
+
+    if(allRaces.length === 0) { el.textContent = "学習データなし: まずは「学習保存」ボタンでデータを蓄積してください"; return; }
+    
+    // 1. まず「開催地」と「ライン数」でベース検索
+    let simRaces = findSimilarRaces(unified, allRaces);
+    let baseCount = simRaces.length;
+    let modeText = "標準モード(開催地+ライン数)";
+    let isHighPrecision = false;
+
+    // 2. Adaptive Logic: オッズ傾向での絞り込み
+    if (baseCount >= 30) {
+        const currentVar = getOddsVariant(unified); 
+        const refined = simRaces.filter(r => getOddsVariant(r) === currentVar);
+        
+        if (refined.length >= 10) {
+            simRaces = refined;
+            isHighPrecision = true;
+            const vText = currentVar === 1 ? "本命堅調" : (currentVar === 3 ? "混戦・荒れ" : "標準");
+            modeText = `高精度モード(開催地+ライン+${vText}オッズ)`;
+        }
+    }
+    
+    if(simRaces.length === 0) { 
+        el.innerHTML = `該当データなし (全${allRaces.length}件中): <span style="font-weight:normal">この開催地(${unified.venue})のデータが不足しています</span>`; 
+        return; 
+    }
+
+    // 3. 的中率計算
+    let matchCount = 0; let totalRaces = 0;
+    simRaces.forEach(race => {
+        const winnerComb = race.result.slice(0,3).join('-');
+        const gSet = getGoldSet(race); // 当時のロジックで計算しなおす
+        if(gSet.has(winnerComb)) matchCount++;
+        totalRaces++;
+    });
+
+    if(totalRaces > 0) {
+        const rate = (matchCount / totalRaces * 100).toFixed(1);
+        const modeLabelStyle = isHighPrecision 
+            ? "background:#7e22ce;color:#fff;padding:2px 6px;border-radius:4px;font-size:0.9em;" 
+            : "background:#e2e8f0;color:#64748b;padding:2px 6px;border-radius:4px;font-size:0.9em;";
+
+        el.innerHTML = `
+            <div style="margin-bottom:4px;"><span style="${modeLabelStyle}">${modeText}</span></div>
+            <div>母数: ${baseCount}件 → 抽出: <b>${totalRaces}</b>件</div>
+            <div style="margin-top:4px;color:#c2410c;font-weight:900;font-size:1.2em;border-top:1px dashed #fdba74;padding-top:4px;">
+                黄色ハイライト的中率 ${rate}%
+            </div>
+        `;
+    }
+}
+
+// --- ★ハイブリッド万車券予報 (Manshu-SP Logic) ---
+async function analyzeManshu() {
+    const resBox = document.getElementById('manshuResult');
+    const scoreEl = document.getElementById('msScore');
+    const barEl = document.getElementById('msBar');
+    const labelEl = document.getElementById('msLabel');
+    const textEl = document.getElementById('msText');
+    const detailEl = document.getElementById('msDetail');
+
+    if(!unified) { alert('先にデータを読み込んでください'); return; }
+    
+    resBox.style.display = 'block';
+    textEl.innerHTML = '解析中... (Theory check)';
+    barEl.style.width = '0%';
+    
+    // --- 1. 理論解析 (Theory Check) ---
+    let theoryScore = 0;
+    let reasons = [];
+    
+    let oddsArr = unified.odds.map(o => o.o).sort((a,b)=>a-b);
+    let fav1 = oddsArr[0] || 1.0;
+    
+    if(fav1 < 2.0) { theoryScore += 15; reasons.push("一本被り(1人気<2.0倍) [+15]"); } 
+    else if(fav1 >= 5.0) { theoryScore += 40; reasons.push("大混戦(1人気>5.0倍) [+40]"); } 
+    else if(fav1 >= 3.0) { theoryScore += 20; reasons.push("混戦気味(1人気>3.0倍) [+20]"); }
+
+    let lineCount = 0;
+    if(unified.lines) { unified.lines.forEach(l => { if(l.includes('-')) lineCount++; }); }
+    if(lineCount === 0) lineCount = 3; 
+
+    if(lineCount >= 4) { theoryScore += 30; reasons.push("4分戦/細切れ [+30]"); } 
+    else if(lineCount === 3) { theoryScore += 10; reasons.push("3分戦 [+10]"); }
+
+    // オッズ断層チェック
+    let hasGap = false;
+    for(let i=0; i<Math.min(oddsArr.length-1, 10); i++) {
+        if(oddsArr[i+1] > oddsArr[i] * 1.5) { hasGap = true; break; }
+    }
+    if(!hasGap) { theoryScore += 20; reasons.push("オッズ断層なし [+20]"); }
+
+    // --- 2. 統計解析 (History Check) ---
+    textEl.innerHTML = '解析中... (Database check)';
+    await new Promise(r => setTimeout(r, 100)); 
+
+    let historyScore = 0;
+    let historyMsg = "データ不足(±0)";
+
+    if(db) {
+        let tx = db.transaction(STORE, 'readonly');
+        let store = tx.objectStore(STORE);
+        let allRaces = await new Promise(r => { let req = store.getAll(); req.onsuccess = () => r(req.result); });
+        
+        let targetVenue = unified.venue;
+        let baseMatches = allRaces.filter(r => {
+             let lc = 0;
+             if(r.lines) r.lines.forEach(l => { if(l.includes('-')) lc++; });
+             if(lc === 0) lc = 3;
+             return r.venue === targetVenue && lc === lineCount;
+        });
+
+        // 穴選手(Dark Horse)の有無による絞り込み
+        let finalMatches = baseMatches;
+        let searchMode = "標準";
+
+        if(hasDarkHorse(unified)) {
+            let strictMatches = baseMatches.filter(r => hasDarkHorse(r));
+            if(strictMatches.length >= 5) {
+                finalMatches = strictMatches;
+                searchMode = "厳選(穴気配あり)";
+            } else { searchMode = "標準(データ不足のため緩和)"; }
+        }
+
+        if(finalMatches.length >= 3) {
+            let manshuCount = 0;
+            finalMatches.forEach(r => {
+                if(r.result && r.result.length>=3) {
+                    let winComb = r.result.slice(0,3).join('-');
+                    let winOddObj = r.odds.find(o => o.c === winComb);
+                    if(winOddObj && winOddObj.o >= 100.0) { manshuCount++; }
+                }
+            });
+
+            let rate = manshuCount / finalMatches.length;
+            if(rate >= 0.5) { historyScore = 30; historyMsg = `激荒れ傾向(万車率${(rate*100).toFixed(0)}%) [+30]`; } 
+            else if(rate >= 0.3) { historyScore = 15; historyMsg = `荒れ気味(万車率${(rate*100).toFixed(0)}%) [+15]`; } 
+            else if(rate <= 0.1) { historyScore = -10; historyMsg = `堅調傾向(万車率${(rate*100).toFixed(0)}%) [-10]`; } 
+            else { historyMsg = `標準(万車率${(rate*100).toFixed(0)}%) [±0]`; }
+            reasons.push(`検索モード: ${searchMode}`);
+        }
+    }
+    reasons.push(`過去データ: ${historyMsg}`);
+
+    let totalScore = theoryScore + historyScore;
+    if(totalScore < 0) totalScore = 0; if(totalScore > 100) totalScore = 100;
+
+    scoreEl.textContent = totalScore;
+    barEl.style.width = totalScore + '%';
+    
+    let riskLevel = '';
+    if(totalScore >= 80) { riskLevel = '【超波乱警報】 何が起きてもおかしくない！'; labelEl.textContent = 'DANGER'; barEl.style.background = '#ef4444'; } 
+    else if(totalScore >= 50) { riskLevel = '【波乱含み】 穴狙いの価値あり'; labelEl.textContent = 'WARNING'; barEl.style.background = '#f59e0b'; } 
+    else { riskLevel = '【平穏〜小波乱】 本命・対抗中心か'; labelEl.textContent = 'SAFE'; barEl.style.background = '#10b981'; }
+
+    textEl.textContent = riskLevel;
+    detailEl.innerHTML = reasons.join('<br>');
+}
+// --- パーサー① (netkeirin/AI指数) ---
+function parse1(txt) {
+  const d = normDate(txt); const venue = getVenue(txt);
+  const rM = txt.match(/(\d{1,2})R/); const race = rM ? rM[1] : null;
+  let rows = []; let lines = txt.split('\n'); let type = 'B';
+  const regexA = /^\s*(\d)\s+([^\s]+).+?(\d+)\s+(\d+\.\d+)%\s+(\d+\.\d+)%\s+(\d+\.\d+)%\s+(\d+\.\d+)%/;
+  const regexB = /^\s*(\d+)\s+(\d+)\s+(\d)\s+([^\s]+)/;
+  lines.forEach(l => {
+    let m = l.match(regexA);
+    if(m) {
+      type = 'A'; rows.push({car:+m[1], name:m[2], index:+m[3], win:+m[4]/100, S:+m[5]/100, H:+m[6]/100, B:+m[7]/100, score:0});
+    } else {
+      m = l.match(regexB);
+      if(m) rows.push({car:+m[3], name:m[4], index:+m[2], win:0, S:0, H:0, B:0, score:0});
+    }
+  });
+  let result=[]; const resM = /レース結果([\s\S]+)/.exec(txt);
+  if(resM){
+    const raw = resM[1].split(/\r?\n/).map(s=>s.replace(/\t/g,' ').replace(/ {2,}/g,' ').trim());
+    let pend=null;
+    for(const ln of raw){
+      if(!ln) continue;
+      if(/^(見解|ウマい|指数|AI指数の使い方|この予想家|※S：|車番\s*選手名|買い目|並び予想|払い戻し)/.test(ln)) break;
+      let m = ln.match(/^\s*([1-9])\s+(?:\S+\s+)?([1-9])\b/);
+      if(m){ result[+m[1]-1]=+m[2]; pend=null; continue; }
+      if(pend!=null){ m = ln.match(/^\s*(?:\S+\s+)?([1-9])\b/); if(m){ result[pend-1]=+m[1]; pend=null; continue; } }
+      m = ln.match(/^\s*([1-9])\s*$/); if(m){ pend=+m[1]; continue; }
+    }
+  }
+  result = result.filter(x => x);
+  return { venue, date: d, race, rows, result, type };
+}
+
+// --- パーサー② (Kドリ) ---
+function parse2(txt) {
+  const d = normDate(txt); const venue = getVenue(txt);
+  const rM = txt.match(/(\d{1,2})R/); const race = rM ? rM[1] : null;
+  let lines = [];
+  let lineM = txt.match(/[←<=]\s*([^\n]+)/);
+  if(lineM) {
+    let raw = lineM[1].trim();
+    lines = raw.split(/\s{2,}/).map(g => g.replace(/\s+/g, '-'));
+    if(lines.length === 1 && raw.includes('/')) lines = raw.split('/').map(x => x.trim().replace(/\s+/g, '-'));
+  }
+  let odds = []; let re = /(\d+)\s+(\d-\d-\d)\s+([\d\.]+)/g; let m;
+  while((m = re.exec(txt)) !== null) odds.push({ rank: +m[1], c: m[2], o: +m[3] });
+  if(odds.length === 0) { let re2 = /(\d-\d-\d)\s+([\d\.]+)/g; while((m = re2.exec(txt)) !== null) odds.push({ rank: 0, c: m[1], o: +m[2] }); }
+  
+  const scoreMap = {}; const playerStats = {}; let lastCar = null; const scoreRe = /[A-S][1-3]\s+(\d{2,3}\.\d{2})/;
+  const carLineRe2 = /^\s*(\d+)\s+(\d+)\s+\S+/; 
+  const carLineRe1 = /^\s*(\d+)\s+\D/; 
+  const statsRe = /(\d{2,3}\.\d{2})\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/;
+  
+  txt.split('\n').forEach(l => {
+     let cm2 = l.match(carLineRe2);
+     if(cm2) { lastCar = +cm2[2]; } else { let cm1 = l.match(carLineRe1); if(cm1 && !l.includes('R')) { lastCar = +cm1[1]; } }
+     let sm = l.match(scoreRe); if(sm && lastCar) scoreMap[lastCar] = +sm[1];
+     let stm = l.match(statsRe);
+     if(stm && lastCar) {
+        playerStats[lastCar] = { score: +stm[1], S: +stm[2], B: +stm[3], nige: +stm[4], makuri: +stm[5], sashi: +stm[6], mark: +stm[7] };
+     }
+  });
+  return { venue, date: d, race, lines, odds, scoreMap, playerStats };
+}
+
+// --- 補完ロジック ---
+function inferStats(rows, detailedStats) {
+  if(detailedStats && Object.keys(detailedStats).length > 0) {
+      rows.forEach(r => {
+          const st = detailedStats[r.car];
+          if(st) {
+              let basePower = Math.max(0.01, (st.score - 50) / 100); 
+              let totalWins = st.nige + st.makuri + st.sashi + st.mark;
+              if(totalWins > 5) basePower += 0.1; 
+              r.win = parseFloat(basePower.toFixed(3));
+              r.B = Math.min(0.9, st.B * 0.05);
+              r.S = Math.min(0.8, st.S * 0.05);
+              let senkoType = st.nige * 2 + st.makuri; let oikomiType = st.sashi + st.mark;
+              if (senkoType > oikomiType || st.nige >= 1) { if (r.B < 0.35) r.B = 0.35; }
+              r.H = (r.B + r.S) / 2; r.score = st.score;
+          } else { r.win = 0.1; r.B = 0; r.S = 0; r.H = 0; }
+      });
+  } else {
+      rows.forEach(r => { if(r.win === 0 && r.index > 0) { let p = r.index / 500; r.win = parseFloat(p.toFixed(3)); r.S = r.index>100?0.2:0.05; r.H = r.index>100?0.1:0.02; r.B = r.index>100?0.1:0.02; }});
+  }
+  return rows;
+}
+
+// --- 統合・表示 ---
+async function doUnify() {
+  const s = document.getElementById('statusBadge'); const e = document.getElementById('errMsg');
+  const bSave = document.getElementById('btnSave'); const bKelly = document.getElementById('btnKelly'); const bHit = document.getElementById('btnHit');
+  const tb = document.querySelector('#pTable tbody');
+  
+  e.style.display='none'; bSave.disabled = true; bKelly.disabled = true; bHit.disabled = true;
+  bKelly.classList.remove('active-mode'); bHit.classList.remove('active-mode');
+  document.getElementById('manshuResult').style.display = 'none'; 
+  const accInfo = document.getElementById('goldAccInfo');
+  accInfo.innerHTML = '(ボタンを押すと同一開催地の分析を開始します)';
+  accInfo.style.display = 'block';
+
+  let displayRows = []; let displayLines = []; let displayOdds = []; let displayResult = []; let displayScoreMap = {};
+  
+  if(data1 && data1.rows.length > 0) {
+     let tempRows = JSON.parse(JSON.stringify(data1.rows));
+     let stats = (data2 && data2.playerStats) ? data2.playerStats : null;
+     if(data1.type === 'B') { tempRows = inferStats(tempRows, stats); } else if(stats) { tempRows.forEach(r => { if(stats[r.car]) r.score = stats[r.car].score; }); }
+     displayRows = tempRows; if(data1.result) displayResult = data1.result;
+  }
+  if(data2) { if(data2.lines) displayLines = data2.lines; if(data2.odds) displayOdds = data2.odds; if(data2.scoreMap) displayScoreMap = data2.scoreMap; }
+  
+  tb.innerHTML = '';
+  let stats = (data2 && data2.playerStats) ? data2.playerStats : {};
+  displayRows.forEach(r => {
+    if(displayScoreMap[r.car] && !r.score) r.score = displayScoreMap[r.car];
+    let kimariInfo = ''; let sInfo = ''; let bInfo = '';
+    if(stats[r.car]) { let st = stats[r.car]; kimariInfo = `<div class="stat-kimari">逃${st.nige}捲${st.makuri}差${st.sashi}マ${st.mark}</div>`; sInfo = `<div class="stat-sub">(${st.S})</div>`; bInfo = `<div class="stat-sub">(${st.B})</div>`; }
+    let tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.car}</td><td><div style="font-weight:700">${r.name}</div>${kimariInfo}</td><td class="val-idx">${r.index||'0'}</td><td>${(r.win!==undefined)?r.win.toFixed(3):'0.000'}</td><td>${(r.S!==undefined)?r.S.toFixed(2):'0.00'}${sInfo}</td><td>${(r.H!==undefined)?r.H.toFixed(2):'0.00'}</td><td>${(r.B!==undefined)?r.B.toFixed(2):'0.00'}${bInfo}</td><td>${(r.score!==undefined)?r.score.toFixed(2):'0.00'}</td>`;
+    tb.appendChild(tr);
+  });
+  
+  let senkeiName = '—';
+  if (displayLines && displayLines.length > 0) {
+      let lineCount = 0; let runners = [];
+      displayLines.forEach(l => {
+          if (l.includes('-')) lineCount++;
+          let parts = l.split('-'); let headCar = parseInt(parts[0]);
+          if (!isNaN(headCar)) { let r = displayRows.find(x => x.car === headCar); if (r) runners.push(r); }
+      });
+      if (lineCount === 2) senkeiName = '二分戦'; else if (lineCount === 3) senkeiName = '三分戦'; else if (lineCount >= 4) senkeiName = '細切れ戦'; else senkeiName = '乱戦';
+      let heavyRunners = runners.filter(r => (r.B || 0) >= 0.25);
+      if (heavyRunners.length === 1) { let dominant = heavyRunners[0]; let others = runners.filter(r => r.car !== dominant.car); if (others.every(r => (r.B || 0) < 0.1) && others.length > 0) senkeiName = '先行一車'; }
+      document.getElementById('dispType').textContent = senkeiName;
+  }
+  
+  document.getElementById('dispLine').textContent = '← ' + (displayLines.length ? displayLines.join(' / ') : '—');
+  document.getElementById('dispResult').textContent = (displayResult.length ? displayResult.join('-') : '—');
+  let oddsTxt = displayOdds.slice(0, 3).map(o => `${o.c}:${o.o}`).join('  ');
+  document.getElementById('dispOdds').textContent = oddsTxt || 'なし';
+  
+  unified = null;
+  const dvElem = document.getElementById('dispDateVenue'); const bkElem = document.getElementById('dispBank');
+  dvElem.textContent = '—'; bkElem.textContent = '—';
+  
+  if(!data1 && !data2) { s.textContent = 'データ待ち'; s.className='status-badge'; return; }
+  let d1s = (data1 && data1.date) ? data1.date.str : '---'; let v1 = (data1 && data1.venue) ? data1.venue : '---'; let r1 = (data1 && data1.race) ? data1.race : '-';
+  let d2s = (data2 && data2.date) ? data2.date.str : '---'; let v2 = (data2 && data2.venue) ? data2.venue : '---'; let r2 = (data2 && data2.race) ? data2.race : '-';
+  
+  if(!data1 || !data2) { s.textContent = '片側データ入力中'; s.className='status-badge'; e.style.display='block'; e.textContent = `#照合待機/エラー: ①${d1s} ${v1} ${r1}R ↔ ②${d2s} ${v2} ${r2}R`; return; }
+  
+  if(data1.date && !data1.date.y && data2.date && data2.date.y) { data1.date.y = data2.date.y; data1.date.str = `${data1.date.y}-${data1.date.m}-${data1.date.d}`; d1s = data1.date.str; }
+  const vMatch = data1.venue === data2.venue; const rMatch = parseInt(data1.race) === parseInt(data2.race);
+  let dMatch = true;
+  if(data1.date && data1.date.y && data2.date && data2.date.y) dMatch = (data1.date.str === data2.date.str);
+  else if (data1.date && data2.date) dMatch = (data1.date.m === data2.date.m && data1.date.d === data2.date.d);
+  
+  if(!vMatch || !rMatch || !dMatch) { s.textContent='照合不一致'; s.className='status-badge'; e.style.display='block'; e.textContent = `#照合待機/エラー: ①${d1s} ${v1} ${r1}R ↔ ②${d2s} ${v2} ${r2}R`; return; }
+  
+  const hasResult = displayResult.length >= 2;
+  s.textContent = hasResult ? '学習可能 (結果あり)' : '解析完了 (結果なし)';
+  s.className = hasResult ? 'status-badge ok' : 'status-badge';
+  unified = { date: data1.date ? data1.date.str : '????-??-??', venue: data1.venue, race: data1.race, rows: displayRows, lines: displayLines, odds: displayOdds, result: displayResult };
+  dvElem.textContent = `${unified.date} ${unified.venue} ${unified.race}R`;
+  let bank = BANK_DATA_DEF[unified.venue]; bkElem.textContent = bank ? `${bank[1]}バンク (${bank[0]}m)` : '不明';
+  bSave.disabled = !hasResult; bKelly.disabled = false; bHit.disabled = false;
+}
+// --- ★予測実行 & Visible UI (Strategy 6 & 7) ---
+function predict(mode) {
+  if(!unified) return;
+  const out = document.getElementById('predOut');
+  const btnK = document.getElementById('btnKelly'); const btnH = document.getElementById('btnHit');
+  
+  if(mode === 'kelly') { btnK.classList.add('active-mode'); btnH.classList.remove('active-mode'); } 
+  else { btnH.classList.add('active-mode'); btnK.classList.remove('active-mode'); }
+  
+  out.innerHTML = '<div class="status-badge">AI 鬼解析中...</div>';
+  
+  setTimeout(() => {
+    // 1. スコア計算
+    const currentCfg = {
+        useDev: document.getElementById('ckDev').checked,
+        useBank: document.getElementById('ckBank').checked,
+        useEst: document.getElementById('ckEst').checked
+    };
+    
+    let results = calcRaceScores(unified, currentCfg);
+    
+    if (mode === 'hit') results.sort((a,b) => b.prob - a.prob); 
+    else results.sort((a,b) => b.ev - a.ev);
+    
+    // 2. 黄色ハイライト判定
+    const goldSet = getGoldSet(unified);
+    const winnerComb = (unified.result && unified.result.length >= 2) ? unified.result.slice(0,3).join('-') : null;
+
+    // オッズ断層
+    const oddMap = {}; let allOddsArr = [];
+    unified.odds.forEach(o => { oddMap[o.c] = o.o; allOddsArr.push({c:o.c, o:o.o}); });
+    allOddsArr.sort((a,b) => a.o - b.o);
+    let gapCombs = {}; 
+    if(allOddsArr.length > 0) {
+        for(let i = 0; i < allOddsArr.length - 1; i++) {
+            if(allOddsArr[i+1].o > allOddsArr[i].o * 1.5) { gapCombs[allOddsArr[i].c] = true; }
+        }
+    }
+
+    let limit = +document.getElementById('numPicks').value;
+    let html = `<table class="prediction-table"><thead><tr><th>#</th><th>買い目</th><th>${mode==='kelly'?'EV':'率'}</th><th>オッズ</th><th>判定</th></tr></thead><tbody>`;
+    
+    results.slice(0, limit).forEach((s, i) => {
+      let o = s.oddsRef, dispO = o ? o.toFixed(1) : '—'; 
+      let isReal = !!oddMap[s.comb];
+      
+      if(!isReal && currentCfg.useEst) dispO += '<span class="tag-est">推</span>';
+      if(gapCombs[s.comb]) dispO += ' <span style="background:#0f172a;color:#fff;font-size:9px;padding:1px 3px;border-radius:2px;">断層</span>';
+      
+      let mainVal = mode === 'hit' ? (s.prob*100).toFixed(1)+'%' : s.ev.toFixed(2);
+      let style = s.ev >= 1.5 ? 'color:#dc2626' : (s.ev >= 1.0 ? 'color:#2563eb' : 'color:#64748b');
+      let judge = '';
+      
+      // ★Strategy 6: 見える化（バッジ表示）
+      let badges = '';
+      if(s.trendTags) {
+          s.trendTags.forEach(tag => {
+              let cls = tag.type === 'trend' ? 'badge-trend' : 'badge-warn';
+              badges += `<span class="strat-badge ${cls}">${tag.label}</span>`;
+          });
+      }
+      if(s.isDanger) {
+          badges += `<span class="strat-badge badge-danger">⚠危険</span>`;
+      }
+      // ★Strategy 2: GAP表示
+      if(s.gap > 0.1) {
+          badges += `<span class="strat-badge badge-gap">GAP+${(s.gap*100).toFixed(0)}</span>`;
+      }
+
+      if(mode === 'kelly') { if(s.ev >= 1.5) judge = '<span class="judge-badge fire">激熱</span>'; else if(s.ev >= 1.0) judge = '<span class="judge-badge ok">投資</span>'; else judge = '<span style="font-size:10px;color:#cbd5e1">見</span>'; } 
+      else { if(s.prob > 0.15) judge = '<span class="judge-badge ok">本命</span>'; else if(s.prob > 0.05) judge = '<span class="judge-badge">対抗</span>'; else judge = '<span style="font-size:10px;color:#cbd5e1">穴</span>'; }
+      
+      let rowClasses = [];
+      if(winnerComb && s.comb === winnerComb) rowClasses.push('match-win');
+      if(goldSet.has(s.comb)) rowClasses.push('row-gold'); 
+      if(winnerComb && s.comb === winnerComb && !rowClasses.includes('row-gold')) rowClasses.push('win-row'); 
+
+      html += `<tr class="${rowClasses.join(' ')}"><td>${i+1}</td><td class="mono" style="font-weight:700">${s.comb}<div style="line-height:1">${badges}</div></td><td style="${style} font-weight:bold">${mainVal}</td><td>${dispO}</td><td>${judge}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    out.innerHTML = html; 
+    
+    localStorage.setItem('kai_pred_html', html);
+    localStorage.setItem('kai_pred_mode', mode);
+
+  }, 100); 
+}
+
+// --- 保存機能 ---
+function saveLearn() {
+  if(!db || !unified || !unified.result.length) return;
+  const btn = document.getElementById('btnSave');
+  btn.textContent = '保存中...'; btn.disabled = true;
+  let now = new Date();
+  let tsStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  let rec = { ...unified, saveTs: tsStr };
+  let tx = db.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).add(rec);
+  tx.oncomplete = () => {
+    showToast('学習データを保存しました'); 
+    updateLearnUI(false).then(() => { btn.textContent = 'このレースを学習保存'; btn.disabled = false; });
+  };
+  tx.onerror = () => { alert('保存失敗'); btn.disabled = false; };
+}
+
+// --- UI更新 & イベントリスナー ---
+async function updateLearnUI(withAnalysis = true) {
+  if(!db) return;
+  let tx = db.transaction(STORE, 'readonly');
+  let store = tx.objectStore(STORE);
+  let countReq = store.count();
+  let totalCount = await new Promise(r => { countReq.onsuccess = () => r(countReq.result); });
+  document.getElementById('learnCount').textContent = totalCount;
+
+  let items = [];
+  let cursorReq = store.openCursor(null, 'prev');
+  await new Promise(r => {
+      cursorReq.onsuccess = e => {
+          let cursor = e.target.result;
+          if (cursor && items.length < 20) { items.push(cursor.value); cursor.continue(); } else { r(); }
+      };
+  });
+
+  const sel = document.getElementById('selDel'); sel.innerHTML = '';
+  if(items.length > 0) { 
+      let last = items[0];
+      document.getElementById('lsTime').textContent = last.saveTs; 
+      document.getElementById('lsVenue').textContent = `${last.date} ${last.venue} ${last.race}R`; 
+  } else { document.getElementById('lsTime').textContent = '—'; document.getElementById('lsVenue').textContent = '—'; }
+  items.forEach(r => { let op = document.createElement('option'); op.value = r.id; op.text = `${r.date} ${r.venue} ${r.race}R`; sel.add(op); });
+}
+
+function forceSave() {
+  const s1 = document.getElementById('sec1').value; const s2 = document.getElementById('sec2').value;
+  if(s1) localStorage.setItem('kai_sec1', s1); if(s2) localStorage.setItem('kai_sec2', s2);
+}
+
+function clearPredictionState() {
+  document.getElementById('predOut').innerHTML = ''; localStorage.removeItem('kai_pred_html'); localStorage.removeItem('kai_pred_mode');
+  document.getElementById('btnKelly').classList.remove('active-mode'); document.getElementById('btnHit').classList.remove('active-mode');
+  const accInfo = document.getElementById('goldAccInfo');
+  if(accInfo) { accInfo.innerHTML = '(ボタンを押すと同一開催地の分析を開始します)'; accInfo.style.display = 'block'; }
+}
+
+['sec1','sec2'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', (e) => {
+    localStorage.setItem('kai_' + id, e.target.value); 
+    clearPredictionState(); 
+    if(id==='sec1') data1 = parse1(e.target.value);
+    if(id==='sec2') data2 = parse2(e.target.value);
+    doUnify();
+  });
+  el.addEventListener('blur', forceSave);
+});
+
+async function restoreSession() {
+  const saved1 = localStorage.getItem('kai_sec1'); const saved2 = localStorage.getItem('kai_sec2');
+  let hasData = false;
+  if(saved1) { document.getElementById('sec1').value = saved1; data1 = parse1(saved1); hasData=true; }
+  if(saved2) { document.getElementById('sec2').value = saved2; data2 = parse2(saved2); hasData=true; }
+  if(hasData) { await doUnify(); } 
+  const savedPred = localStorage.getItem('kai_pred_html');
+  const savedMode = localStorage.getItem('kai_pred_mode');
+  if (savedPred && savedMode) {
+      document.getElementById('predOut').innerHTML = savedPred;
+      if(savedMode === 'kelly') { document.getElementById('btnKelly').classList.add('active-mode'); } 
+      else { document.getElementById('btnHit').classList.add('active-mode'); }
+      document.getElementById('btnKelly').disabled = false; document.getElementById('btnHit').disabled = false;
+  }
+}
+
+// Event Listeners
+document.getElementById('btnHeaderRefresh').onclick = async () => { await refreshBankTrends(); }; // ★手動更新トリガー
+document.getElementById('btnAnalyze').onclick = analyzeSimilarStats;
+document.getElementById('btnManshu').onclick = analyzeManshu; 
+document.getElementById('btnSave').onclick = saveLearn;
+document.getElementById('btnKelly').onclick = () => predict('kelly');
+document.getElementById('btnHit').onclick = () => predict('hit');
+document.getElementById('btnDelOne').onclick = () => { if(!db) return; let id=+document.getElementById('selDel').value; if(id){let tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=()=>{updateLearnUI();};} };
+document.getElementById('btnDelAll').onclick = () => { if(!db) return; if(confirm('全学習データを削除しますか？')){let tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=()=>{updateLearnUI();};} };
+document.getElementById('btnExport').onclick = () => { if(!db) return; let tx = db.transaction(STORE, 'readonly'); let req = tx.objectStore(STORE).getAll(); req.onsuccess = () => { let blob = new Blob([JSON.stringify(req.result)], {type: "application/json"}); let url = URL.createObjectURL(blob); let a = document.createElement('a'); a.href=url; a.download='kai_learning_data.json'; a.click(); showToast('エクスポート完了'); }; };
+document.getElementById('fileImp').addEventListener('change', (e) => { if(!db) return; const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { try { const data = JSON.parse(r.result); if(Array.isArray(data)) { let tx = db.transaction(STORE, 'readwrite'); let count = 0; data.forEach(item => { delete item.id; tx.objectStore(STORE).add(item); count++; }); tx.oncomplete = async () => { showToast(`${count}件ロード完了`); await refreshBankTrends(); updateLearnUI(); }; } } catch(err) { alert('読込エラー: ' + err); } }; r.readAsText(f); });
+document.getElementById('parse1').onclick = () => { document.getElementById('sec1').value=''; localStorage.removeItem('kai_sec1'); data1=null; doUnify(); clearPredictionState(); };
+document.getElementById('parse2').onclick = () => { document.getElementById('sec2').value=''; localStorage.removeItem('kai_sec2'); data2=null; doUnify(); clearPredictionState(); };
+window.addEventListener('visibilitychange', () => { if (document.hidden) { forceSave(); } else { if(db) updateLearnUI(); restoreSession(); } });
+window.addEventListener('pagehide', forceSave); 
+window.addEventListener('beforeunload', forceSave);
+
+initDB();
+restoreSession(); 
+</script>
+</body>
+</html>
